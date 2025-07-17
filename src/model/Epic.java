@@ -1,4 +1,7 @@
+package model;
+
 import java.util.*;
+import util.TaskStatus;
 
 public class Epic extends Task{
     private List<Integer> subtaskIds;

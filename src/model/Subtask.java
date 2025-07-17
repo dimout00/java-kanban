@@ -1,4 +1,6 @@
-import java.util.*;
+package model;
+
+import util.TaskStatus;
 
 public class Subtask extends Task {
     private int epicId;

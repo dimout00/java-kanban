@@ -1,3 +1,6 @@
+package model;
+
+import util.TaskStatus;
 import  java.util.*;
 
 public class Task {

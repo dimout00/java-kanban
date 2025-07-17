@@ -1,4 +1,10 @@
+package manager;
+
 import java.util.*;
+import util.TaskStatus;
+import model.Task;
+import model.Subtask;
+import model.Epic;
 
 public class TaskManager {
     private int nextId = 1;
