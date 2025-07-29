@@ -4,10 +4,12 @@ import model.Epic;
 import model.Task;
 import model.Subtask;
 import manager.TaskManager;
+import manager.Managers;
+
 
 public class Main {
     public static void main(String[] args) {
-        TaskManager manager = new TaskManager();
+        TaskManager manager = Managers.getDefault();
 
         // Создаем задачи
         Task task1 = manager.createTask(new Task(0, "Task 1", "Description 1", TaskStatus.NEW));
