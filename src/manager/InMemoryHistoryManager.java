@@ -27,7 +27,7 @@ public class InMemoryHistoryManager implements HistoryManager {
         Node next;
         Node prev;
 
-        Node (Node next, Task task, Node prev){
+        Node(Node next, Task task, Node prev) {
             this.task = task;
             this.next = next;
             this.prev = prev;
@@ -76,7 +76,8 @@ public class InMemoryHistoryManager implements HistoryManager {
 
         historyMap.remove(node.task.getId());
     }
-    @Override
+    
+	@Override
     public void remove(int id) {
         if (historyMap.containsKey(id)) {
             removeNode(historyMap.get(id));
