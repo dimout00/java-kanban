@@ -20,18 +20,19 @@ public class InMemoryHistoryManager implements HistoryManager {
     public void add(Task task) {
         if (task == null) return;
         int id = task.getId();
-
         remove(id);
-
         linkLast(task);
+        if (historyMap.size() > 10000) {
+            remove(head.task.getId());
+        }
     }
 
     @Override
     public List<Task> getHistory() {
         List<Task> result = new ArrayList<>();
-        Node current = head.next;
+        Node current = head;
 
-        while (current != tail) {
+        while (current != null) {
             result.add(current.task);
             current = current.next;
         }
