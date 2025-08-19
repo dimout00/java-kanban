@@ -1,7 +1,8 @@
 package model;
 
 import util.TaskStatus;
-import  java.util.*;
+
+import java.util.*;
 
 public class Task {
     private int id;
@@ -20,7 +21,7 @@ public class Task {
         return id;
     }
 
-	public void setId(int id) {
+    public void setId(int id) {
         this.id = id;
     }
 

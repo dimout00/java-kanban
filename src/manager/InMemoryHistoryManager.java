@@ -1,6 +1,7 @@
 package manager;
 
 import model.Task;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,7 +78,7 @@ public class InMemoryHistoryManager implements HistoryManager {
         historyMap.remove(node.task.getId());
     }
 
-	@Override
+    @Override
     public void remove(int id) {
         if (historyMap.containsKey(id)) {
             removeNode(historyMap.get(id));
