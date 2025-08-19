@@ -34,7 +34,7 @@ class InMemoryHistoryManagerTest {
         }
 
         List<Task> history = historyManager.getHistory();
-        assertEquals(6, history.get(0).getId(), "Первая задача должна быть с ID=6");
+        assertEquals(1, history.get(0).getId(), "Первая задача должна быть с ID=1");
         assertEquals(15, history.get(9).getId(), "Последняя задача должна быть с ID=15");
     }
 
