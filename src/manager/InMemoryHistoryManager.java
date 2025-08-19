@@ -3,36 +3,17 @@ package manager;
 import model.Task;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
 public class InMemoryHistoryManager implements HistoryManager {
 
-    private final LinkedList<Task> history = new LinkedList<>();
     private final Map<Integer, Node> historyMap = new HashMap<>();
-    private final Node head;
-    private final Node tail;
+    private Node head;
+    private Node tail;
 
     public InMemoryHistoryManager() {
-        head = new Node(null, null, null);
-        tail = new Node(null, null, null);
-
-        head.next = tail;
-        tail.prev = head;
-    }
-
-    private static class Node {
-        Task task;
-        Node next;
-        Node prev;
-
-        Node(Node next, Task task, Node prev) {
-            this.task = task;
-            this.next = next;
-            this.prev = prev;
-        }
     }
 
     @Override
@@ -40,9 +21,8 @@ public class InMemoryHistoryManager implements HistoryManager {
         if (task == null) return;
         int id = task.getId();
 
-        if (historyMap.containsKey(id)) {
-            removeNode(historyMap.get(id));
-        }
+        remove(id);
+
         linkLast(task);
     }
 
@@ -60,28 +40,43 @@ public class InMemoryHistoryManager implements HistoryManager {
     }
 
     private void linkLast(Task task) {
-
-        Node newNode = new Node(tail.prev, task, tail);
-
-        tail.prev.next = newNode;
-        tail.prev = newNode;
-
+        final Node newNode = new Node(tail, task, null);
+        if (tail == null) {
+            head = newNode;
+        } else {
+            tail.next = newNode;
+        }
+        tail = newNode;
         historyMap.put(task.getId(), newNode);
-    }
-
-    private void removeNode(Node node) {
-        if (node == null) return;
-
-        node.prev.next = node.next;
-        node.next.prev = node.prev;
-
-        historyMap.remove(node.task.getId());
     }
 
     @Override
     public void remove(int id) {
-        if (historyMap.containsKey(id)) {
-            removeNode(historyMap.get(id));
+        Node node = historyMap.remove(id);
+        if (node == null) return;
+
+        if (node.prev != null) {
+            node.prev.next = node.next;
+        } else {
+            head = node.next;
+        }
+
+        if (node.next != null) {
+            node.next.prev = node.prev;
+        } else {
+            tail = node.prev;
+        }
+    }
+
+    private static class Node {
+        Task task;
+        Node next;
+        Node prev;
+
+        Node(Node prev, Task task, Node next) {
+            this.task = task;
+            this.prev = prev;
+            this.next = next;
         }
     }
 }
