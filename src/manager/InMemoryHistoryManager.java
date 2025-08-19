@@ -22,9 +22,6 @@ public class InMemoryHistoryManager implements HistoryManager {
         int id = task.getId();
         remove(id);
         linkLast(task);
-        if (historyMap.size() > 10000) {
-            remove(head.task.getId());
-        }
     }
 
     @Override
