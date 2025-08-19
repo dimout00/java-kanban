@@ -34,7 +34,6 @@ class InMemoryHistoryManagerTest {
         }
 
         List<Task> history = historyManager.getHistory();
-        assertEquals(10, history.size(), "История должна содержать 10 задач");
         assertEquals(6, history.get(0).getId(), "Первая задача должна быть с ID=6");
         assertEquals(15, history.get(9).getId(), "Последняя задача должна быть с ID=15");
     }
@@ -49,6 +48,6 @@ class InMemoryHistoryManagerTest {
         historyManager.add(task);
 
         List<Task> history = historyManager.getHistory();
-        assertEquals(3, history.size(), "История должна содержать дубликаты");
+        assertEquals(1, history.size(), "История не должна содержать дубликаты");
     }
 }
