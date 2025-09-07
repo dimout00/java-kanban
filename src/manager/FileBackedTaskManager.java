@@ -43,8 +43,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             for (Epic epic : manager.epics.values()) {
                 List<Integer> subtaskIds = new ArrayList<>();
                 for (Subtask subtask : manager.subtasks.values()) {
-                    if (subtask.getEpicId() == epic.getId()) {
-                    } else {
+                    if (subtask.getEpicId() != epic.getId()) {
                         subtaskIds.add(Integer.valueOf(subtask.getId()));
                     }
                 }
