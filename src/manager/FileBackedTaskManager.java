@@ -11,13 +11,18 @@ import java.util.List;
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private final File file;
 
-    public FileBackedTaskManager(File file) {
+    private FileBackedTaskManager(File file) {
         super(Managers.getDefaultHistory());
         this.file = file;
     }
 
     public static FileBackedTaskManager loadFromFile(File file) {
         FileBackedTaskManager manager = new FileBackedTaskManager(file);
+
+        if (!file.exists()) {
+            return manager;
+        }
+
         try {
             String content = Files.readString(file.toPath());
             String[] lines = content.split("\n");
@@ -51,7 +56,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 manager.updateEpicStatus(epic.getId());
             }
         } catch (IOException e) {
-            throw new ManagerSaveException("Ошибка загрузки файла", e);
+            throw new ManagerLoadException("Ошибка загрузки файла", e);
+        } catch (RuntimeException e) {
+            throw new ManagerLoadException("Ошибка формата данных в файле", e);
         }
         return manager;
     }
@@ -107,7 +114,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 int epicId = Integer.parseInt(fields[5]);
                 return new Subtask(id, name, description, status, epicId);
             default:
-                throw new IllegalArgumentException("Неизвестный тип задачи");
+                throw new ManagerLoadException("Неизвестный тип задачи в файле: " + type);
         }
     }
 

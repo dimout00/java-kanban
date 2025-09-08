@@ -8,7 +8,7 @@ public class Managers {
     }
 
     public static TaskManager getFileBackedManager(File file) {
-        return new FileBackedTaskManager(file);
+        return FileBackedTaskManager.loadFromFile(file);
     }
 
     public static HistoryManager getDefaultHistory() {
