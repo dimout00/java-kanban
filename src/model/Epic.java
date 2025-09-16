@@ -1,6 +1,7 @@
 package model;
 
 import util.TaskStatus;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,16 +20,16 @@ public class Epic extends Task {
         return subtaskIds;
     }
 
+    public void setSubtaskIds(List<Integer> subtaskIds) {
+        this.subtaskIds = subtaskIds;
+    }
+
     public void addSubtaskId(int subtaskId) {
         subtaskIds.add(subtaskId);
     }
 
     public void removeSubtaskId(int subtaskId) {
         subtaskIds.remove(Integer.valueOf(subtaskId));
-    }
-
-    public void setSubtaskIds(List<Integer> subtaskIds) {
-        this.subtaskIds = subtaskIds;
     }
 
     @Override

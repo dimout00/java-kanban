@@ -128,7 +128,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
         history = taskManager.getHistory();
         assertEquals(1, history.size());
         assertFalse(history.contains(task2));
-        
+
         taskManager.deleteTask(task3.getId());
         history = taskManager.getHistory();
         assertTrue(history.isEmpty());
