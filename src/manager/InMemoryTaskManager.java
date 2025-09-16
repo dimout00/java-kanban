@@ -4,21 +4,19 @@ import model.Task;
 import model.Subtask;
 import model.Epic;
 import util.TaskStatus;
-
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class InMemoryTaskManager implements TaskManager {
-    protected int nextId = 1;
     protected final Map<Integer, Task> tasks = new HashMap<>();
     protected final Map<Integer, Subtask> subtasks = new HashMap<>();
     protected final Map<Integer, Epic> epics = new HashMap<>();
-    protected HistoryManager historyManager;
     private final TreeSet<Task> prioritizedTasks = new TreeSet<>(
             Comparator.comparing(Task::getStartTime, Comparator.nullsLast(Comparator.naturalOrder()))
     );
+    protected int nextId = 1;
+    protected HistoryManager historyManager;
 
     public InMemoryTaskManager(HistoryManager historyManager) {
         this.historyManager = historyManager;
