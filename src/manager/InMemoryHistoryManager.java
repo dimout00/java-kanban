@@ -1,79 +1,65 @@
 package manager;
 
 import model.Task;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import util.TaskStatus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
-public class InMemoryHistoryManager implements HistoryManager {
-    private final Map<Integer, Node> historyMap = new HashMap<>();
-    private Node head;
-    private Node tail;
+import static org.junit.jupiter.api.Assertions.*;
 
-    public InMemoryHistoryManager() {
+class InMemoryHistoryManagerTest {
+    private HistoryManager historyManager;
+
+    @BeforeEach
+    void setUp() {
+        historyManager = Managers.getDefaultHistory();
     }
 
-    @Override
-    public void add(Task task) {
-        if (task == null) return;
-        int id = task.getId();
-        remove(id);
-        linkLast(task);
+    @Test
+    void shouldAddTasksToHistory() {
+        Task task1 = new Task(1, "Task 1", "Desc 1", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now());
+        Task task2 = new Task(2, "Task 2", "Desc 2", TaskStatus.IN_PROGRESS,
+                Duration.ofMinutes(45), LocalDateTime.now().plusHours(1));
+
+        historyManager.add(task1);
+        historyManager.add(task2);
+
+        List<Task> history = historyManager.getHistory();
+        assertEquals(2, history.size(), "История должна содержать 2 задачи");
+        assertEquals(task1, history.get(0), "Первая задача не совпадает");
+        assertEquals(task2, history.get(1), "Вторая задача не совпадает");
     }
 
-    @Override
-    public List<Task> getHistory() {
-        List<Task> result = new ArrayList<>();
-        Node current = head;
-
-        while (current != null) {
-            result.add(current.task);
-            current = current.next;
+    @Test
+    void shouldNotHaveSizeLimit() {
+        // Добавляем 15 задач
+        for (int i = 1; i <= 15; i++) {
+            Task task = new Task(i, "Task " + i, "Desc", TaskStatus.NEW,
+                    Duration.ofMinutes(30), LocalDateTime.now().plusHours(i));
+            historyManager.add(task);
         }
 
-        return result;
+        List<Task> history = historyManager.getHistory();
+        assertEquals(15, history.size(), "История должна содержать все 15 задач");
+        assertEquals(1, history.get(0).getId(), "Первая задача должна быть с ID=1");
+        assertEquals(15, history.get(14).getId(), "Последняя задача должна быть с ID=15");
     }
 
-    private void linkLast(Task task) {
-        final Node newNode = new Node(tail, task, null);
-        if (tail == null) {
-            head = newNode;
-        } else {
-            tail.next = newNode;
-        }
-        tail = newNode;
-        historyMap.put(task.getId(), newNode);
-    }
+    @Test
+    void shouldHandleDuplicateAdds() {
+        Task task = new Task(1, "Task", "Desc", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now());
 
-    @Override
-    public void remove(int id) {
-        Node node = historyMap.remove(id);
-        if (node == null) return;
+        historyManager.add(task);
+        historyManager.add(task);
+        historyManager.add(task);
 
-        if (node.prev != null) {
-            node.prev.next = node.next;
-        } else {
-            head = node.next;
-        }
-
-        if (node.next != null) {
-            node.next.prev = node.prev;
-        } else {
-            tail = node.prev;
-        }
-    }
-
-    private static class Node {
-        Task task;
-        Node next;
-        Node prev;
-
-        Node(Node prev, Task task, Node next) {
-            this.task = task;
-            this.prev = prev;
-            this.next = next;
-        }
+        List<Task> history = historyManager.getHistory();
+        assertEquals(1, history.size(), "История не должна содержать дубликаты");
     }
 }
