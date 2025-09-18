@@ -1,6 +1,5 @@
-package manager;
-
 import model.*;
+import manager.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TaskStatus;
@@ -75,7 +74,7 @@ class TaskManagerTest {
     }
 
     @Test
-    void shouldReturnPrioritizedTasks() {
+    void shouldReturnPrioritizedTasks() throws TaskValidationException {
         LocalDateTime now = LocalDateTime.now();
         Task task1 = taskManager.createTask(new Task(0, "Task 1", "Desc", TaskStatus.NEW,
                 Duration.ofHours(2), now.plusHours(2)));
@@ -99,7 +98,7 @@ class TaskManagerTest {
     }
 
     @Test
-    void shouldNotDuplicateTasksInHistory() {
+    void shouldNotDuplicateTasksInHistory() throws TaskValidationException {
         Task task = taskManager.createTask(new Task(0, "Task", "Desc", TaskStatus.NEW,
                 Duration.ofHours(1), LocalDateTime.now()));
 
@@ -112,7 +111,7 @@ class TaskManagerTest {
     }
 
     @Test
-    void shouldRemoveFromHistory() {
+    void shouldRemoveFromHistory() throws TaskValidationException {
         Task task1 = taskManager.createTask(new Task(0, "Task 1", "Desc", TaskStatus.NEW,
                 Duration.ofHours(1), LocalDateTime.now()));
         Task task2 = taskManager.createTask(new Task(0, "Task 2", "Desc", TaskStatus.NEW,
