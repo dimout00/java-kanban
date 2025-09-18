@@ -13,7 +13,9 @@ public class InMemoryTaskManager implements TaskManager {
     protected final Map<Integer, Task> tasks = new HashMap<>();
     protected final Map<Integer, Subtask> subtasks = new HashMap<>();
     protected final Map<Integer, Epic> epics = new HashMap<>();
-    private final Set<Task> prioritizedTasks = new TreeSet<>(Comparator.comparing(Task::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+    private final Set<Task> prioritizedTasks = new TreeSet<>(
+            Comparator.comparing(Task::getStartTime, Comparator.nullsLast(Comparator.naturalOrder()))
+    );
     protected int nextId = 1;
     protected HistoryManager historyManager;
 
@@ -100,12 +102,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Task createTask(Task task) {
-        try {
-            validateNoTimeOverlap(task);
-        } catch (TaskValidationException e) {
-            throw new RuntimeException("Ошибка валидации задачи", e);
-        }
+    public Task createTask(Task task) throws TaskValidationException {
+        validateNoTimeOverlap(task);
         int id = generateId();
         task.setId(id);
         tasks.put(id, task);
@@ -118,12 +116,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Subtask createSubtask(Subtask subtask) {
-        try {
-            validateNoTimeOverlap(subtask);
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка валидации подзадачи", e);
-        }
+    public Subtask createSubtask(Subtask subtask) throws TaskValidationException {
+        validateNoTimeOverlap(subtask);
         int id = generateId();
         subtask.setId(id);
         subtasks.put(id, subtask);
@@ -150,12 +144,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void updateTask(Task task) {
-        try {
-            validateNoTimeOverlap(task);
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка валидации задачи", e);
-        }
+    public void updateTask(Task task) throws TaskValidationException {
+        validateNoTimeOverlap(task);
         if (tasks.containsKey(task.getId())) {
             Task oldTask = tasks.get(task.getId());
             prioritizedTasks.remove(oldTask);
@@ -169,12 +159,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void updateSubtask(Subtask subtask) {
-        try {
-            validateNoTimeOverlap(subtask);
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка валидации подзадачи", e);
-        }
+    public void updateSubtask(Subtask subtask) throws TaskValidationException {
+        validateNoTimeOverlap(subtask);
         if (subtasks.containsKey(subtask.getId())) {
             Subtask oldSubtask = subtasks.get(subtask.getId());
             prioritizedTasks.remove(oldSubtask);
@@ -295,7 +281,8 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     private boolean hasTimeOverlap(Task task1, Task task2) {
-        if (task1.getStartTime() == null || task2.getStartTime() == null || task1.getEndTime() == null || task2.getEndTime() == null) {
+        if (task1.getStartTime() == null || task2.getStartTime() == null ||
+            task1.getEndTime() == null || task2.getEndTime() == null) {
             return false;
         }
 
@@ -312,7 +299,9 @@ public class InMemoryTaskManager implements TaskManager {
             return;
         }
 
-        boolean hasOverlap = prioritizedTasks.stream().filter(task -> !task.equals(newTask)).anyMatch(existingTask -> hasTimeOverlap(newTask, existingTask));
+        boolean hasOverlap = prioritizedTasks.stream()
+                .filter(task -> !task.equals(newTask))
+                .anyMatch(existingTask -> hasTimeOverlap(newTask, existingTask));
 
         if (hasOverlap) {
             throw new TaskValidationException("Задача пересекается по времени с существующей задачей");

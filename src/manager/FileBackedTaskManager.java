@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import util.TaskStatus;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private final File file;
@@ -126,14 +127,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public Task createTask(Task task) {
+    public Task createTask(Task task) throws TaskValidationException {
         Task createdTask = super.createTask(task);
         save();
         return createdTask;
     }
 
     @Override
-    public Subtask createSubtask(Subtask subtask) {
+    public Subtask createSubtask(Subtask subtask) throws TaskValidationException {
         Subtask createdSubtask = super.createSubtask(subtask);
         save();
         return createdSubtask;
@@ -147,13 +148,13 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public void updateTask(Task task) {
+    public void updateTask(Task task) throws TaskValidationException {
         super.updateTask(task);
         save();
     }
 
     @Override
-    public void updateSubtask(Subtask subtask) {
+    public void updateSubtask(Subtask subtask) throws TaskValidationException {
         super.updateSubtask(subtask);
         save();
     }

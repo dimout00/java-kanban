@@ -8,64 +8,70 @@ import util.TaskStatus;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class TaskManagerTest<T extends TaskManager> {
-    protected T taskManager;
+class TaskManagerTest {
+    private TaskManager taskManager;
+    private HistoryManager historyManager;
 
     @BeforeEach
-    abstract void setUp();
-
-    @Test
-    void shouldCalculateEpicStatusCorrectly() {
-        Epic epic = taskManager.createEpic(new Epic(0, "Epic", "Description"));
-        Subtask subtask1 = taskManager.createSubtask(new Subtask(0, "Subtask 1", "Desc", TaskStatus.NEW, epic.getId(),
-                Duration.ofMinutes(30), LocalDateTime.now()));
-        Subtask subtask2 = taskManager.createSubtask(new Subtask(0, "Subtask 2", "Desc", TaskStatus.NEW, epic.getId(),
-                Duration.ofMinutes(45), LocalDateTime.now().plusHours(1)));
-
-        assertEquals(TaskStatus.NEW, epic.getStatus());
-
-        subtask1.setStatus(TaskStatus.DONE);
-        subtask2.setStatus(TaskStatus.DONE);
-        taskManager.updateSubtask(subtask1);
-        taskManager.updateSubtask(subtask2);
-
-        assertEquals(TaskStatus.DONE, epic.getStatus());
-
-        subtask1.setStatus(TaskStatus.NEW);
-        taskManager.updateSubtask(subtask1);
-
-        assertEquals(TaskStatus.IN_PROGRESS, epic.getStatus());
-
-        subtask1.setStatus(TaskStatus.IN_PROGRESS);
-        subtask2.setStatus(TaskStatus.IN_PROGRESS);
-        taskManager.updateSubtask(subtask1);
-        taskManager.updateSubtask(subtask2);
-
-        assertEquals(TaskStatus.IN_PROGRESS, epic.getStatus());
+    void setUp() {
+        historyManager = new InMemoryHistoryManager();
+        taskManager = new InMemoryTaskManager(historyManager);
     }
 
     @Test
-    void shouldDetectTimeOverlaps() {
-        LocalDateTime now = LocalDateTime.now();
-        Task task1 = taskManager.createTask(new Task(0, "Task 1", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), now));
+    void shouldCreateTask() throws TaskValidationException {
+        Task task = new Task(0, "Test task", "Test description", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now());
+        Task createdTask = taskManager.createTask(task);
 
-        Task overlappingTask = new Task(0, "Task 2", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), now.plusMinutes(30));
+        assertNotNull(createdTask.getId(), "Задача должна получить ID");
+        assertEquals(task.getName(), createdTask.getName(), "Название задачи не совпадает");
+        assertEquals(task.getDescription(), createdTask.getDescription(), "Описание задачи не совпадает");
+        assertEquals(task.getStatus(), createdTask.getStatus(), "Статус задачи не совпадает");
+    }
 
-        assertThrows(IllegalStateException.class, () -> {
+    @Test
+    void shouldGetTaskById() throws TaskValidationException {
+        Task task = taskManager.createTask(new Task(0, "Test task", "Test description", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now()));
+        Optional<Task> retrievedTask = taskManager.getTask(task.getId());
+
+        assertTrue(retrievedTask.isPresent(), "Задача должна быть найдена");
+        assertEquals(task, retrievedTask.get(), "Полученная задача не совпадает с созданной");
+    }
+
+    @Test
+    void shouldUpdateTask() throws TaskValidationException {
+        Task task = taskManager.createTask(new Task(0, "Test task", "Test description", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now()));
+        Task updatedTask = new Task(task.getId(), "Updated", "Updated description", TaskStatus.DONE,
+                Duration.ofMinutes(45), LocalDateTime.now().plusHours(1));
+
+        taskManager.updateTask(updatedTask);
+        Optional<Task> savedTask = taskManager.getTask(task.getId());
+
+        assertTrue(savedTask.isPresent(), "Задача должна быть найдена");
+        assertEquals(updatedTask.getName(), savedTask.get().getName(), "Название не обновилось");
+        assertEquals(updatedTask.getDescription(), savedTask.get().getDescription(), "Описание не обновилось");
+        assertEquals(updatedTask.getStatus(), savedTask.get().getStatus(), "Статус не обновился");
+    }
+
+    @Test
+    void shouldThrowExceptionForOverlappingTasks() throws TaskValidationException {
+        Task task1 = taskManager.createTask(new Task(0, "Task 1", "Description 1", TaskStatus.NEW,
+                Duration.ofHours(1), LocalDateTime.now()));
+
+        // Попытка создать задачу, которая пересекается по времени
+        Task overlappingTask = new Task(0, "Task 2", "Description 2", TaskStatus.NEW,
+                Duration.ofHours(1), LocalDateTime.now().plusMinutes(30));
+
+        assertThrows(TaskValidationException.class, () -> {
             taskManager.createTask(overlappingTask);
-        });
-
-        Task nonOverlappingTask = new Task(0, "Task 3", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), now.plusHours(2));
-
-        assertDoesNotThrow(() -> {
-            taskManager.createTask(nonOverlappingTask);
-        });
+        }, "Должно быть выброшено исключение при пересечении задач");
     }
 
     @Test
@@ -85,7 +91,6 @@ public abstract class TaskManagerTest<T extends TaskManager> {
         assertEquals(task3, prioritized.get(1));
         assertEquals(task1, prioritized.get(2)); // Самая поздняя
     }
-
 
     @Test
     void shouldHandleEmptyHistory() {

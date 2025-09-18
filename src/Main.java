@@ -78,12 +78,8 @@ public class Main {
                 System.out.println(task);
             }
 
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof TaskValidationException) {
-                System.err.println("Ошибка валидации задачи: " + e.getCause().getMessage());
-            } else {
-                System.err.println("Неожиданная ошибка: " + e.getMessage());
-            }
+        } catch (TaskValidationException e) {
+            System.err.println("Ошибка валидации задачи: " + e.getMessage());
         }
     }
 }
