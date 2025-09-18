@@ -1,28 +1,31 @@
 package manager;
 
-import model.*;
+import model.Epic;
+import model.Subtask;
+import model.Task;
+import model.Type;
 import util.TaskStatus;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private final File file;
 
-    private FileBackedTaskManager(File file) {
+    public FileBackedTaskManager(File file) {
         super(Managers.getDefaultHistory());
         this.file = file;
     }
 
     public static FileBackedTaskManager loadFromFile(File file) {
         FileBackedTaskManager manager = new FileBackedTaskManager(file);
-
-        if (!file.exists()) {
-            return manager;
-        }
-
         try {
             String content = Files.readString(file.toPath());
             String[] lines = content.split("\n");
@@ -31,15 +34,15 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             for (int i = 1; i < lines.length; i++) {
                 if (lines[i].isEmpty()) continue;
                 Task task = manager.fromString(lines[i]);
-                int id = Integer.parseInt(String.valueOf(task.getId()));
+                int id = task.getId();
                 if (id > maxId) maxId = id;
 
                 if (task instanceof Epic) {
-                    manager.epics.put(Integer.valueOf(id), (Epic) task);
+                    manager.epics.put(id, (Epic) task);
                 } else if (task instanceof Subtask) {
-                    manager.subtasks.put(Integer.valueOf(id), (Subtask) task);
+                    manager.subtasks.put(id, (Subtask) task);
                 } else {
-                    manager.tasks.put(Integer.valueOf(id), task);
+                    manager.tasks.put(id, task);
                 }
             }
 
@@ -48,24 +51,22 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             for (Epic epic : manager.epics.values()) {
                 List<Integer> subtaskIds = new ArrayList<>();
                 for (Subtask subtask : manager.subtasks.values()) {
-                    if (subtask.getEpicId() != epic.getId()) {
-                        subtaskIds.add(Integer.valueOf(subtask.getId()));
+                    if (subtask.getEpicId() == epic.getId()) {
+                        subtaskIds.add(subtask.getId());
                     }
                 }
                 epic.setSubtaskIds(subtaskIds);
                 manager.updateEpicStatus(epic.getId());
             }
         } catch (IOException e) {
-            throw new ManagerLoadException("Ошибка загрузки файла", e);
-        } catch (RuntimeException e) {
-            throw new ManagerLoadException("Ошибка формата данных в файле", e);
+            throw new ManagerSaveException("Ошибка загрузки файла", e);
         }
         return manager;
     }
 
     private void save() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            writer.write("id,type,name,status,description,epic\n");
+            writer.write("id,type,name,status,description,epic,duration,startTime\n");
             for (Task task : getAllTasks()) {
                 writer.write(toString(task) + "\n");
             }
@@ -85,14 +86,20 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 task instanceof Subtask ? "SUBTASK" : "TASK";
         String epicId = task instanceof Subtask ?
                 String.valueOf(((Subtask) task).getEpicId()) : "";
+        String duration = task.getDuration() != null ?
+                String.valueOf(task.getDuration().toMinutes()) : "";
+        String startTime = task.getStartTime() != null ?
+                task.getStartTime().toString() : "";
 
-        return String.format("%d,%s,%s,%s,%s,%s",
+        return String.format("%d,%s,%s,%s,%s,%s,%s,%s",
                 task.getId(),
                 type,
                 task.getName(),
                 task.getStatus().toString(),
                 task.getDescription(),
-                epicId);
+                epicId,
+                duration,
+                startTime);
     }
 
     private Task fromString(String value) {
@@ -102,31 +109,37 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         String name = fields[2];
         TaskStatus status = TaskStatus.valueOf(fields[3]);
         String description = fields[4];
+        String epicIdStr = fields[5];
+        String durationStr = fields[6];
+        String startTimeStr = fields[7];
+
+        Duration duration = durationStr.isEmpty() ? null : Duration.ofMinutes(Long.parseLong(durationStr));
+        LocalDateTime startTime = startTimeStr.isEmpty() ? null : LocalDateTime.parse(startTimeStr);
 
         switch (type) {
             case TASK:
-                return new Task(id, name, description, status);
+                return new Task(id, name, description, status, duration, startTime);
             case EPIC:
                 Epic epic = new Epic(id, name, description);
                 epic.setStatus(status);
                 return epic;
             case SUBTASK:
-                int epicId = Integer.parseInt(fields[5]);
-                return new Subtask(id, name, description, status, epicId);
+                int epicId = Integer.parseInt(epicIdStr);
+                return new Subtask(id, name, description, status, epicId, duration, startTime);
             default:
-                throw new ManagerLoadException("Неизвестный тип задачи в файле: " + type);
+                throw new IllegalArgumentException("Неизвестный тип задачи");
         }
     }
 
     @Override
-    public Task createTask(Task task) {
+    public Task createTask(Task task) throws TaskValidationException {
         Task createdTask = super.createTask(task);
         save();
         return createdTask;
     }
 
     @Override
-    public Subtask createSubtask(Subtask subtask) {
+    public Subtask createSubtask(Subtask subtask) throws TaskValidationException {
         Subtask createdSubtask = super.createSubtask(subtask);
         save();
         return createdSubtask;
@@ -140,13 +153,13 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public void updateTask(Task task) {
+    public void updateTask(Task task) throws TaskValidationException {
         super.updateTask(task);
         save();
     }
 
     @Override
-    public void updateSubtask(Subtask subtask) {
+    public void updateSubtask(Subtask subtask) throws TaskValidationException {
         super.updateSubtask(subtask);
         save();
     }

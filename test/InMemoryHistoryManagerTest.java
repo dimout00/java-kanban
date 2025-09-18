@@ -1,10 +1,13 @@
-package manager;
-
+import manager.HistoryManager;
+import manager.InMemoryHistoryManager;
+import manager.Managers;
 import model.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TaskStatus;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,8 +22,10 @@ class InMemoryHistoryManagerTest {
 
     @Test
     void shouldAddTasksToHistory() {
-        Task task1 = new Task(1, "Task 1", "Desc 1", TaskStatus.NEW);
-        Task task2 = new Task(2, "Task 2", "Desc 2", TaskStatus.IN_PROGRESS);
+        Task task1 = new Task(1, "Task 1", "Desc 1", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now());
+        Task task2 = new Task(2, "Task 2", "Desc 2", TaskStatus.IN_PROGRESS,
+                Duration.ofMinutes(45), LocalDateTime.now().plusHours(1));
 
         historyManager.add(task1);
         historyManager.add(task2);
@@ -35,7 +40,8 @@ class InMemoryHistoryManagerTest {
     void shouldNotHaveSizeLimit() {
         // Добавляем 15 задач
         for (int i = 1; i <= 15; i++) {
-            historyManager.add(new Task(i, "Task " + i, "Desc", TaskStatus.NEW));
+            historyManager.add(new Task(i, "Task " + i, "Desc", TaskStatus.NEW,
+                    Duration.ofMinutes(30), LocalDateTime.now().plusHours(i)));
         }
 
         List<Task> history = historyManager.getHistory();
@@ -47,7 +53,8 @@ class InMemoryHistoryManagerTest {
     @Test
     void shouldHandleDuplicateAdds() {
         HistoryManager historyManager = new InMemoryHistoryManager();
-        Task task = new Task(1, "Task", "Desc", TaskStatus.NEW);
+        Task task = new Task(1, "Task", "Desc", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now());
 
         historyManager.add(task);
         historyManager.add(task);

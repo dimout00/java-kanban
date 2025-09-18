@@ -1,10 +1,11 @@
 package manager;
 
-import model.Task;
-import model.Subtask;
 import model.Epic;
+import model.Subtask;
+import model.Task;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TaskManager {
     List<Task> getAllTasks();
@@ -19,21 +20,21 @@ public interface TaskManager {
 
     void deleteAllEpics();
 
-    Task getTask(int id);
+    Optional<Task> getTask(int id);
 
-    Subtask getSubtask(int id);
+    Optional<Subtask> getSubtask(int id);
 
-    Epic getEpic(int id);
+    Optional<Epic> getEpic(int id);
 
-    Task createTask(Task task);
+    Task createTask(Task task) throws TaskValidationException;
 
-    Subtask createSubtask(Subtask subtask);
+    Subtask createSubtask(Subtask subtask) throws TaskValidationException;
 
     Epic createEpic(Epic epic);
 
-    void updateTask(Task task);
+    void updateTask(Task task) throws TaskValidationException;
 
-    void updateSubtask(Subtask subtask);
+    void updateSubtask(Subtask subtask) throws TaskValidationException;
 
     void updateEpic(Epic epic);
 
@@ -46,4 +47,6 @@ public interface TaskManager {
     List<Subtask> getEpicSubtasks(int epicId);
 
     List<Task> getHistory();
+
+    List<Task> getPrioritizedTasks();
 }
