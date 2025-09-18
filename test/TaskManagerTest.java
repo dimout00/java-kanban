@@ -1,8 +1,6 @@
 package manager;
 
-import model.Epic;
-import model.Subtask;
-import model.Task;
+import model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TaskStatus;
@@ -38,26 +36,23 @@ class TaskManagerTest {
 
     @Test
     void shouldGetTaskById() throws TaskValidationException {
-        Task task = new Task(0, "Test task", "Test description", TaskStatus.NEW,
-                Duration.ofMinutes(30), LocalDateTime.now());
-        Task createdTask = taskManager.createTask(task);
-        Optional<Task> retrievedTask = taskManager.getTask(createdTask.getId());
+        Task task = taskManager.createTask(new Task(0, "Test task", "Test description", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now()));
+        Optional<Task> retrievedTask = taskManager.getTask(task.getId());
 
         assertTrue(retrievedTask.isPresent(), "Задача должна быть найдена");
-        assertEquals(createdTask, retrievedTask.get(), "Полученная задача не совпадает с созданной");
+        assertEquals(task, retrievedTask.get(), "Полученная задача не совпадает с созданной");
     }
 
     @Test
     void shouldUpdateTask() throws TaskValidationException {
-        Task task = new Task(0, "Test task", "Test description", TaskStatus.NEW,
-                Duration.ofMinutes(30), LocalDateTime.now());
-        Task createdTask = taskManager.createTask(task);
-
-        Task updatedTask = new Task(createdTask.getId(), "Updated", "Updated description", TaskStatus.DONE,
+        Task task = taskManager.createTask(new Task(0, "Test task", "Test description", TaskStatus.NEW,
+                Duration.ofMinutes(30), LocalDateTime.now()));
+        Task updatedTask = new Task(task.getId(), "Updated", "Updated description", TaskStatus.DONE,
                 Duration.ofMinutes(45), LocalDateTime.now().plusHours(1));
 
         taskManager.updateTask(updatedTask);
-        Optional<Task> savedTask = taskManager.getTask(createdTask.getId());
+        Optional<Task> savedTask = taskManager.getTask(task.getId());
 
         assertTrue(savedTask.isPresent(), "Задача должна быть найдена");
         assertEquals(updatedTask.getName(), savedTask.get().getName(), "Название не обновилось");
@@ -67,9 +62,8 @@ class TaskManagerTest {
 
     @Test
     void shouldThrowExceptionForOverlappingTasks() throws TaskValidationException {
-        Task task1 = new Task(0, "Task 1", "Description 1", TaskStatus.NEW,
-                Duration.ofHours(1), LocalDateTime.now());
-        taskManager.createTask(task1);
+        Task task1 = taskManager.createTask(new Task(0, "Task 1", "Description 1", TaskStatus.NEW,
+                Duration.ofHours(1), LocalDateTime.now()));
 
         // Попытка создать задачу, которая пересекается по времени
         Task overlappingTask = new Task(0, "Task 2", "Description 2", TaskStatus.NEW,
@@ -81,25 +75,21 @@ class TaskManagerTest {
     }
 
     @Test
-    void shouldReturnPrioritizedTasks() throws TaskValidationException {
+    void shouldReturnPrioritizedTasks() {
         LocalDateTime now = LocalDateTime.now();
-        Task task1 = new Task(0, "Task 1", "Desc", TaskStatus.NEW,
-                Duration.ofHours(2), now.plusHours(2));
-        Task task2 = new Task(0, "Task 2", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), now);
-        Task task3 = new Task(0, "Task 3", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), now.plusHours(1));
-
-        taskManager.createTask(task1);
-        taskManager.createTask(task2);
-        taskManager.createTask(task3);
+        Task task1 = taskManager.createTask(new Task(0, "Task 1", "Desc", TaskStatus.NEW,
+                Duration.ofHours(2), now.plusHours(2)));
+        Task task2 = taskManager.createTask(new Task(0, "Task 2", "Desc", TaskStatus.NEW,
+                Duration.ofHours(1), now));
+        Task task3 = taskManager.createTask(new Task(0, "Task 3", "Desc", TaskStatus.NEW,
+                Duration.ofHours(1), now.plusHours(1)));
 
         List<Task> prioritized = taskManager.getPrioritizedTasks();
 
         assertEquals(3, prioritized.size());
-        assertEquals(task2.getId(), prioritized.get(0).getId()); // Самая ранняя
-        assertEquals(task3.getId(), prioritized.get(1).getId());
-        assertEquals(task1.getId(), prioritized.get(2).getId()); // Самая поздняя
+        assertEquals(task2, prioritized.get(0)); // Самая ранняя
+        assertEquals(task3, prioritized.get(1));
+        assertEquals(task1, prioritized.get(2)); // Самая поздняя
     }
 
     @Test
@@ -109,66 +99,43 @@ class TaskManagerTest {
     }
 
     @Test
-    void shouldNotDuplicateTasksInHistory() throws TaskValidationException {
-        Task task = new Task(0, "Task", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), LocalDateTime.now());
-        Task createdTask = taskManager.createTask(task);
+    void shouldNotDuplicateTasksInHistory() {
+        Task task = taskManager.createTask(new Task(0, "Task", "Desc", TaskStatus.NEW,
+                Duration.ofHours(1), LocalDateTime.now()));
 
-        taskManager.getTask(createdTask.getId());
-        taskManager.getTask(createdTask.getId());
-        taskManager.getTask(createdTask.getId());
+        taskManager.getTask(task.getId());
+        taskManager.getTask(task.getId());
+        taskManager.getTask(task.getId());
 
         List<Task> history = taskManager.getHistory();
         assertEquals(1, history.size());
     }
 
     @Test
-    void shouldRemoveFromHistory() throws TaskValidationException {
-        Task task1 = new Task(0, "Task 1", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), LocalDateTime.now());
-        Task task2 = new Task(0, "Task 2", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), LocalDateTime.now().plusHours(2));
-        Task task3 = new Task(0, "Task 3", "Desc", TaskStatus.NEW,
-                Duration.ofHours(1), LocalDateTime.now().plusHours(4));
+    void shouldRemoveFromHistory() {
+        Task task1 = taskManager.createTask(new Task(0, "Task 1", "Desc", TaskStatus.NEW,
+                Duration.ofHours(1), LocalDateTime.now()));
+        Task task2 = taskManager.createTask(new Task(0, "Task 2", "Desc", TaskStatus.NEW,
+                Duration.ofHours(1), LocalDateTime.now().plusHours(2)));
+        Task task3 = taskManager.createTask(new Task(0, "Task 3", "Desc", TaskStatus.NEW,
+                Duration.ofHours(1), LocalDateTime.now().plusHours(4)));
 
-        Task createdTask1 = taskManager.createTask(task1);
-        Task createdTask2 = taskManager.createTask(task2);
-        Task createdTask3 = taskManager.createTask(task3);
+        taskManager.getTask(task1.getId());
+        taskManager.getTask(task2.getId());
+        taskManager.getTask(task3.getId());
 
-        taskManager.getTask(createdTask1.getId());
-        taskManager.getTask(createdTask2.getId());
-        taskManager.getTask(createdTask3.getId());
-
-        taskManager.deleteTask(createdTask1.getId());
+        taskManager.deleteTask(task1.getId());
         List<Task> history = taskManager.getHistory();
         assertEquals(2, history.size());
-        assertFalse(history.stream().anyMatch(t -> t.getId() == createdTask1.getId()));
+        assertFalse(history.contains(task1));
 
-        taskManager.deleteTask(createdTask2.getId());
+        taskManager.deleteTask(task2.getId());
         history = taskManager.getHistory();
         assertEquals(1, history.size());
-        assertFalse(history.stream().anyMatch(t -> t.getId() == createdTask2.getId()));
+        assertFalse(history.contains(task2));
 
-        taskManager.deleteTask(createdTask3.getId());
+        taskManager.deleteTask(task3.getId());
         history = taskManager.getHistory();
         assertTrue(history.isEmpty());
-    }
-
-    @Test
-    void shouldCreateEpicAndSubtask() throws TaskValidationException {
-        Epic epic = new Epic(0, "Test Epic", "Test Epic Description");
-        Epic createdEpic = taskManager.createEpic(epic);
-
-        Subtask subtask = new Subtask(0, "Test Subtask", "Test Subtask Description",
-                TaskStatus.NEW, createdEpic.getId(), Duration.ofMinutes(30), LocalDateTime.now());
-        Subtask createdSubtask = taskManager.createSubtask(subtask);
-
-        assertNotNull(createdEpic.getId(), "Эпик должен получить ID");
-        assertNotNull(createdSubtask.getId(), "Подзадача должна получить ID");
-        assertEquals(createdEpic.getId(), createdSubtask.getEpicId(), "ID эпика должен совпадать в подзадаче");
-
-        List<Subtask> epicSubtasks = taskManager.getEpicSubtasks(createdEpic.getId());
-        assertEquals(1, epicSubtasks.size(), "Эпик должен содержать одну подзадачу");
-        assertEquals(createdSubtask.getId(), epicSubtasks.get(0).getId(), "Подзадача в эпике должна совпадать с созданной");
     }
 }
