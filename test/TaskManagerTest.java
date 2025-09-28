@@ -1,5 +1,5 @@
-import model.*;
 import manager.*;
+import model.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TaskStatus;
