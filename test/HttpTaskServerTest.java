@@ -17,9 +17,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HttpTaskServerTest {
+    private static final String BASE_URL = "http://localhost:8080";
     private TaskManager manager;
     private HttpTaskServer taskServer;
     private Gson gson;
@@ -39,6 +40,32 @@ class HttpTaskServerTest {
         taskServer.stop();
     }
 
+    //Методы для улучшения читаемости тестов
+    private HttpResponse<String> sendGet(String path) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + path))
+                .GET()
+                .build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sendPost(String path, String body) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + path))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sendDelete(String path) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + path))
+                .DELETE()
+                .build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
     @Test
     void testCreateAndGetTask() throws IOException, InterruptedException {
         // Создаем задачу с простыми данными для тестирования
@@ -46,27 +73,17 @@ class HttpTaskServerTest {
                 Duration.ofMinutes(30), LocalDateTime.of(2024, 1, 1, 10, 0));
         String taskJson = gson.toJson(task);
 
-        System.out.println("Sending JSON: " + taskJson); // Для отладки
+        System.out.println("Sending JSON: " + taskJson);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/tasks"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(taskJson))
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("Response status: " + response.statusCode()); // Для отладки
-        System.out.println("Response body: " + response.body()); // Для отладки
+        // Создание задачи
+        HttpResponse<String> response = sendPost("/tasks", taskJson);
+        System.out.println("Response status: " + response.statusCode());
+        System.out.println("Response body: " + response.body());
 
         assertEquals(201, response.statusCode(), "Expected 201 Created but got " + response.statusCode());
 
         // Получаем список задач
-        HttpRequest getRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/tasks"))
-                .GET()
-                .build();
-
-        HttpResponse<String> getResponse = client.send(getRequest, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> getResponse = sendGet("/tasks");
         assertEquals(200, getResponse.statusCode());
 
         List<Task> tasks = manager.getAllTasks();
@@ -74,15 +91,9 @@ class HttpTaskServerTest {
         assertEquals("Test Task", tasks.get(0).getName());
     }
 
-    // Добавляем простой тест для проверки что сервер вообще работает
     @Test
     void testServerIsRunning() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/tasks"))
-                .GET()
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = sendGet("/tasks");
         assertEquals(200, response.statusCode());
     }
 }

@@ -1,22 +1,16 @@
 package manager;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.LocalDateTime;
 
 public class BaseHttpHandler {
     protected final Gson gson;
 
     public BaseHttpHandler() {
-        this.gson = new GsonBuilder()
-                .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-                .registerTypeAdapter(Duration.class, new DurationAdapter())
-                .create();
+        this.gson = GsonConfig.getGson();
     }
 
     protected void sendText(HttpExchange exchange, String text, int statusCode) throws IOException {
